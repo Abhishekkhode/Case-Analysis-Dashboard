@@ -2,22 +2,73 @@
 <html>
 <head>
 <style>
-  .print-button {
-    display: inline-block;
-    padding: 0.5em 1em;
-    background-color: #FF4B4B;
+.print-button {
+    padding: 8px 16px;
+    background: #d03b3b;
     color: white;
-    text-align: center;
-    text-decoration: none;
-    border-radius: 0.25em;
     border: none;
+    border-radius: 4px;
     cursor: pointer;
     font-family: sans-serif;
     font-size: 14px;
-  }
+}
+
+/* ✅ Styling for images ONLY in PDF (not affecting webpage) */
+@media print {
+    img.plot-export {
+        width: 100% !important;
+        height: auto !important;
+        margin-bottom: 1.5rem !important;
+        page-break-inside: avoid !important;
+    }
+}
 </style>
+
+<script>
+async function convertChartsToImages() {
+    const PlotlyRef = window.parent.Plotly;
+    const charts = window.parent.document.querySelectorAll('.js-plotly-plot');
+
+    for (let chart of charts) {
+        // ✅ Export with bigger PNG size ONLY for printing (not webpage)
+        const img = await PlotlyRef.toImage(chart, {
+            format: 'png',
+            width: 900,   // Bigger only in PDF
+            height: 700,
+            scale: 3      // High resolution
+        });
+
+        // Create image node only for printing
+        const imgNode = new Image();
+        imgNode.src = img;
+        imgNode.className = "plot-export";
+
+        // ✅ Replace chart ONLY in exported PDF
+        chart.style.display = 'none';         // Hide original chart temporarily
+        chart.parentNode.insertBefore(imgNode, chart.nextSibling);
+    }
+}
+
+async function downloadPDF() {
+    await convertChartsToImages();
+    window.parent.print();
+
+    // ✅ Restore original webpage content after PDF generation
+    setTimeout(() => {
+        const imgs = window.parent.document.querySelectorAll('img.plot-export');
+        imgs.forEach(img => img.remove());
+
+        const charts = window.parent.document.querySelectorAll('.js-plotly-plot');
+        charts.forEach(chart => (chart.style.display = 'block'));
+    }, 500);
+}
+</script>
 </head>
+
 <body>
-  <button class="print-button" onclick="window.parent.print()">Download Report as PDF</button>
+    <button onclick="downloadPDF()" class="print-button">📥 Download as PDF</button>
 </body>
 </html>
+
+
+  <!-- <button class="print-button" onclick="window.parent.print()">Download Report as PDF</button> -->

@@ -11,6 +11,7 @@ import plotly.io as pio
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
     page_title="Case Analysis Dashboard",
+    page_icon="📅",
     # layout="wide",
 )
 
@@ -28,118 +29,89 @@ def get_status_list(env_key):
     value = os.getenv(env_key, "")
     return [status.strip() for status in value.split(",") if status.strip()]
 
+# OPEN_STATUSES = get_status_list("OPEN_STATUSES")
 OPEN_STATUSES = get_status_list("OPEN_STATUSES")
 CLOSED_STATUSES = get_status_list("CLOSED_STATUSES")
 OPEN_STATUSESAVG = get_status_list("OPEN_STATUSES_AVG")
 selected_owners = get_status_list("SELECTED_OWNERS")
 productline = get_status_list("PRODUCT_LINE")
+# OPEN_STATUSES2 = get_status_list("OPEN_STATUSES2")
 RELEVANT_STATUSES = OPEN_STATUSES + CLOSED_STATUSES + ["Closed - Sales Lead/Transfer"]
 
 def add_pdf_export():
     """
-    Adds CSS for a clean PDF export + injects a button (from HTML file).
+    Adds CSS for a perfectly structured, print-friendly PDF export and a button to trigger it.
     """
-    import streamlit as st
-    import streamlit.components.v1 as components
-
     st.sidebar.markdown("---")
+    
     print_css = """
-        <style>
-        @media print {
-
-            body, section[data-testid="stAppViewContainer"], section[data-testid="stHeader"] {
-                background: #ffffff !important;
-                color: #000 !important;
-            }
-            section[data-testid="stSidebar"] { display: none !important; }
-
-            /* ✅ Ensure DataFrames (tables) never get overlapped */
-            div[data-testid="stDataFrame"] {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                margin-bottom: 2rem !important;  /* Adds space after the table */
-                position: relative !important;
-                z-index: 2 !important;
-            }
-
-            /* ✅ If a chart comes immediately after a table → push it down to next page */
-            div[data-testid="stDataFrame"] + img.plot-export,
-            div[data-testid="stDataFrame"] + div[data-testid="stPlotlyChart"] {
-                page-break-before: always !important;
-                margin-top: 2rem !important;
-            }
-
-            /* ✅ General Chart Styling (Only in PDF) */
-            img.plot-export, 
-            div[data-testid="stPlotlyChart"] {
-                max-width: 100% !important;
-                height: auto !important;
-                display: block !important;
-                margin-top: 1rem !important;
-                margin-bottom: 2rem !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                z-index: 1 !important;
-            }
-
-            /* ✅ Prevent headers from sticking over charts */
-            h1, h2, h3, h4, p {
-                page-break-after: avoid !important;
-                break-after: avoid !important;
-                margin-bottom: 0.8rem !important;
-            }
-
-            /* --- THIS IS THE FIX --- */
-            /* ✅ Force all columns to stack vertically */
-            div[data-testid="stHorizontalBlock"] {
-                display: block !important;
-            }
-
-            /* ✅ Prevent content breaks inside other layout components */
-            div[data-testid="stVerticalBlock"], div[data-testid="stMetric"] {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            /* ✅ Hide UI elements in PDF */
-            div[data-testid="stDownloadButton"],
-            div[data-testid="stFileUploader"],
-            div[data-testid="stMultiSelect"],
-            div[data-testid="stRadio"],
-            div[data-testid="stDateInput"],
-            iframe {
-                display: none !important;
-            }
-
-            /* --- RULES MOVED HERE --- */
-            /* ✅ Force any header/text after a chart to a new page */
-            /* This prevents all overlapping */
-            img.plot-export + h1,
-            img.plot-export + h2,
-            img.plot-export + h3,
-            img.plot-export + h4,
-            img.plot-export + p,
-            div[data-testid="stPlotlyChart"] + h1,
-            div[data-testid="stPlotlyChart"] + h2,
-            div[data-testid="stPlotlyChart"] + h3,
-            div[data-testid="stPlotlyChart"] + h4,
-            div[data-testid="stPlotlyChart"] + p {
-                page-break-before: always !important;
-                margin-top: 2rem !important;
-            }
+<style>
+    @media print {
+        /* --- General Layout --- */
+        section[data-testid="stSidebar"] {
+            display: none !important;
         }
-        </style>
-        """
-    st.markdown(print_css, unsafe_allow_html=True)
 
-    # ✅ Embed the custom HTML button safely
+        /* --- Page Break Rules --- */
+        h1, h2, h3 {
+            break-before: page !important;
+            padding-top: 2rem !important;
+        }
+
+        /* --- Element Splitting Prevention --- */
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stMetric"],
+        div[data-testid="stHorizontalBlock"] {
+            break-inside: avoid !important;
+        }
+        
+        /* --- Hide Unnecessary Elements --- */
+        div[data-testid="stDownloadButton"] { display: none !important; }
+        iframe { display: none !important; }
+        
+        /* --- Professional Table Styling for PDF --- */
+        div[data-testid="stDataFrame"] {
+            break-inside: avoid !important;
+        }
+
+        div[data-testid="stDataFrame"] > div > table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1px solid #a8a8a8 !important;
+        }
+        
+        div[data-testid="stDataFrame"] > div > table th {
+            background-color: #f0f0f0 !important;
+            color: black !important;
+            border: 1px solid #a8a8a8 !important;
+            padding: 8px 12px !important;
+            text-align: left !important;
+        }
+
+        div[data-testid="stDataFrame"] > div > table td {
+            border: 1px solid #dcdcdc !important;
+            padding: 8px 12px !important;
+            
+            /* --- THIS IS THE FIX --- */
+            /* Force the text color to be black so it's visible on a white background */
+            color: black !important; 
+        }
+    }
+</style>
+    """
+    st.markdown(print_css, unsafe_allow_html=True)
+    
+    # Read the content of the HTML file for the button
     try:
         with open("print_button.html", "r") as f:
             html_content = f.read()
-        with st.sidebar:
-            components.html(html_content, height=70)
     except FileNotFoundError:
-        st.sidebar.error("⚠ Error: 'print_button.html' not found.")
+        st.sidebar.error("Error: 'print_button.html' not found.")
+        return
+
+    # Embed the custom button from the HTML file
+    with st.sidebar:
+        components.html(html_content, height=50)
 
 
 # --- HELPER FUNCTION ---
@@ -177,7 +149,7 @@ def create_download_buttons(fig, df, file_name, index=False):
 
 
 # --- APP TITLE ---
-st.title(" Case Analysis Dashboard")
+st.title("📅 Case Analysis Dashboard")
 
 # --- FILE UPLOADER ---
 uploaded_file = st.file_uploader("Upload your Excel file to begin", type=['xlsx'])
@@ -232,20 +204,36 @@ if uploaded_file:
         # --- Reports based on OPENED DATE ---
         st.header(f"Report for Cases Opened/Closed Between: {start_date_dt.strftime('%d %b, %Y')} and {end_date_dt.strftime('%d %b, %Y')}")
 
-        # --- DYNAMIC SUMMARY BOXES ---
+# --- DYNAMIC SUMMARY BOXES ---
         opened_summary_data = []
         closed_summary_data = []
+
+        # --- FIX 1: Define RELEVANT_STATUSES *before* the loop ---
+        # This list is needed for your new filter logic.
+        RELEVANT_STATUSES = OPEN_STATUSES + CLOSED_STATUSES
 
         # Iterate through each week in the selected date range
         for week_start in pd.date_range(start=start_date, end=end_date, freq='W-MON'):
             week_end = week_start + timedelta(days=6)
             
-            opened_mask = (df['Opened Date'] >= week_start) & (df['Opened Date'] <= week_end ) & (df['Status'].isin(RELEVANT_STATUSES) & (df['Product Line'].isin(productline)))
-            opened_count = len(df[opened_mask])
+            # --- FIX 2: Combine the weekly filter with your new filters ---
+            # This now correctly counts cases opened *within this specific week*
+            # that also match your relevant statuses and owners.
+            opened_mask = (df['Opened Date'] >= week_start) & \
+                          (df['Opened Date'] <= week_end) & \
+                          (df['Status'].isin(RELEVANT_STATUSES)) & \
+                          (df['Case Owner'].isin(selected_owners))
+            
+            opened_count = len(df[opened_mask]) # Get the count from the mask
             
             closed_count = 0
             if 'Case Last Modified Date' in df.columns:
-                closed_mask = (df['Case Last Modified Date'] >= week_start) & (df['Case Last Modified Date'] <= week_end) & (df['Status'].isin(CLOSED_STATUSES)) & (df['Product Line'].isin(productline))
+                # --- FIX 3: Added owner filter to closed mask for consistency ---
+                closed_mask = (df['Case Last Modified Date'] >= week_start) & \
+                              (df['Case Last Modified Date'] <= week_end) & \
+                              (df['Status'].isin(CLOSED_STATUSES)) & \
+                              (df['Case Owner'].isin(selected_owners)) # Added this
+                
                 closed_count = len(df[closed_mask])
 
             week_num = week_start.isocalendar().week
@@ -253,10 +241,10 @@ if uploaded_file:
             date_range_str = f"{week_start.strftime('%m/%d/%Y')} – {week_end.strftime('%m/%d/%Y')}"
             week_str = f"Week {week_num} FY {year} ({date_range_str})"
             
-            opened_summary_data.append({'Period': f"{start_date_dt.strftime('%d/%m/%Y')} – {end_date_dt.strftime('%d/%m/%Y')}", 'Cases Opened': opened_count})
-            closed_summary_data.append({'Period': f"{start_date_dt.strftime('%d/%m/%Y')} – {end_date_dt.strftime('%d/%m/%Y')}", 'Cases Closed': closed_count})
+            opened_summary_data.append({'Week': week_str, 'Cases Opened': opened_count})
+            closed_summary_data.append({'Week': week_str, 'Cases Closed': closed_count})
 
-        opened_summary_df = pd.DataFrame(opened_summary_data) 
+        opened_summary_df = pd.DataFrame(opened_summary_data)
         closed_summary_df = pd.DataFrame(closed_summary_data)
         
         box_col1, box_col2 = st.columns(2)
@@ -288,11 +276,10 @@ if uploaded_file:
         
         st.markdown("---")
 
-        cases_in_range = df[(df['Opened Date'] >= start_date_dt) & 
-                            (df['Opened Date'] <= end_date_dt) & 
-                            (df['Status'].isin(RELEVANT_STATUSES))&
-                            (df['Product Line'].isin(productline))].copy()
-                            # (df['Case Owner'].isin(selected_owners))].copy()
+        cases_in_range = df[(df['Opened Date'] >= start_date_dt) &
+                            (df['Opened Date'] <= end_date_dt) &
+                            (df['Status'].isin(RELEVANT_STATUSES)) &
+                            (df['Case Owner'].isin(selected_owners))].copy()
         
         open_cases_data = cases_in_range[cases_in_range['Status'].isin(RELEVANT_STATUSES)].copy()
         closed_cases_data = cases_in_range[cases_in_range['Status'].isin(CLOSED_STATUSES)].copy()
@@ -309,7 +296,8 @@ if uploaded_file:
         st.subheader("Metrics for Cases Opened in Period")
         metric_col1, metric_col2, metric_col3 = st.columns(3)
         with metric_col1:
-            st.metric(label="Total Opened Cases in Period", value=len(open_cases_data))
+            # st.metric(label="Total Open Cases in Period.", value=len(open_cases_data) + len(closed_cases_data))
+            st.metric(label="Total Open Cases in Period.", value=len(cases_in_range))
         with metric_col2:
             st.metric(label="Of Those, Now Closed", value=len(closed_cases_data))
         with metric_col3:
@@ -327,23 +315,10 @@ if uploaded_file:
                 df_to_export['Case Last Modified Date'] = pd.to_datetime(df_to_export['Case Last Modified Date'])
             
             # Create Excel in memory
-            # output_open = io.BytesIO()
-            # with pd.ExcelWriter(output_open, engine='openpyxl', datetime_format='yyyy-mm-dd') as writer:
-            #     df_to_export.to_excel(writer, index=False, sheet_name='Open_In_Period')
-            # excel_data_open = output_open.getvalue()
-
-            # After fixing multiple keys issues
-            # ✅ Ensure date columns are correctly formatted before export
-            df_to_export['Opened Date'] = pd.to_datetime(df_to_export['Opened Date'], errors='coerce').dt.strftime('%Y-%m-%d')
-            if 'Case Last Modified Date' in df_to_export.columns:
-                df_to_export['Case Last Modified Date'] = pd.to_datetime(df_to_export['Case Last Modified Date'], errors='coerce').dt.strftime('%Y-%m-%d')
-
-            # ✅ Create Excel in memory (dates are now strings, won’t get corrupted)
             output_open = io.BytesIO()
-            with pd.ExcelWriter(output_open, engine='openpyxl') as writer:
+            with pd.ExcelWriter(output_open, engine='openpyxl', datetime_format='yyyy-mm-dd') as writer:
                 df_to_export.to_excel(writer, index=False, sheet_name='Open_In_Period')
             excel_data_open = output_open.getvalue()
-
 
             st.download_button(
                 label="📥 Download This Detailed Report",
@@ -382,7 +357,7 @@ if uploaded_file:
                     color_discrete_sequence=px.colors.qualitative.Vivid
                 )
                 fig_all.update_traces(textinfo='percent+value')
-                st.plotly_chart(fig_all, use_container_width=True)
+                st.plotly_chart(fig_all, width='stretch')
                 create_download_buttons(fig_all, all_product_summary, "all_cases_by_product_line")
         
         st.markdown("---")
@@ -415,7 +390,7 @@ if uploaded_file:
                     color_discrete_sequence=px.colors.qualitative.Vivid
                 )
                 fig_closed.update_traces(textinfo='percent+value')
-                st.plotly_chart(fig_closed, use_container_width=True)
+                st.plotly_chart(fig_closed, width='stretch')
                 create_download_buttons(fig_closed, closed_product_summary, "closed_cases_by_product_line")
         
         st.markdown("---")
@@ -445,7 +420,7 @@ if uploaded_file:
                     color_discrete_sequence=px.colors.qualitative.Vivid
                 )
                 fig_closed_period.update_traces(textinfo='percent+value')
-                st.plotly_chart(fig_closed_period, use_container_width=True)
+                st.plotly_chart(fig_closed_period, width='stretch')
                 create_download_buttons(fig_closed_period, closed_in_period_summary, "closed_in_period_by_product_line")
 
             with st.expander("View Detailed Report for Cases Closed in Period"):
@@ -459,24 +434,10 @@ if uploaded_file:
                     df_closed_export['Case Last Modified Date'] = pd.to_datetime(df_closed_export['Case Last Modified Date'])
                 
                 # Excel export
-                # output_closed = io.BytesIO()
-                # with pd.ExcelWriter(output_closed, engine='openpyxl', datetime_format='yyyy-mm-dd') as writer:
-                #     df_closed_export.to_excel(writer, index=False, sheet_name='Closed_In_Period')
-                # excel_data_closed = output_closed.getvalue()
-
-                # After fixing multiple keys issues
-                # ✅ Ensure date columns are correctly formatted before export
-                if 'Opened Date' in df_closed_export.columns:
-                    df_closed_export['Opened Date'] = pd.to_datetime(df_closed_export['Opened Date'], errors='coerce').dt.strftime('%Y-%m-%d')
-                if 'Case Last Modified Date' in df_closed_export.columns:
-                    df_closed_export['Case Last Modified Date'] = pd.to_datetime(df_closed_export['Case Last Modified Date'], errors='coerce').dt.strftime('%Y-%m-%d')
-
-                # ✅ Create Excel in memory (dates are now strings)
                 output_closed = io.BytesIO()
-                with pd.ExcelWriter(output_closed, engine='openpyxl') as writer:
+                with pd.ExcelWriter(output_closed, engine='openpyxl', datetime_format='yyyy-mm-dd') as writer:
                     df_closed_export.to_excel(writer, index=False, sheet_name='Closed_In_Period')
                 excel_data_closed = output_closed.getvalue()
-
 
                 st.download_button(
                     label="📥 Download Closed Cases Detailed Report",
@@ -488,92 +449,6 @@ if uploaded_file:
             st.warning("No cases closed in this period or 'Case Last Modified Date' column is missing.")
         # st.markdown("---")
         st.markdown("---")
-
-        # --- MODIFIED SECTION STARTS HERE ---
-        # st.subheader("Additional Analysis ( Open Cases for Key Product Lines) - Excluding RMA Requests")
-        # st.info("This section provides a separate breakdown of currently open cases (from YTD) for each of the key product lines: Barcode, RFID, PRI, and Reach.")
-
-        # # Define YTD date range and the key product lines to analyze
-        # today = date.today()
-        # start_of_year = date(today.year, 1, 1)
-        # key_product_lines = ['Barcode', 'RFID', 'PRI', 'Reach', 'Printers', 'Machine Vision']
-        # type = "RMA request"
-
-        # # Loop through each product line and create a separate analysis section
-        # for product in key_product_lines:
-        #     st.markdown(f"#### Analysis for: **{product}**")
-            
-        #     # Filter for open cases, within YTD, for the specific product line in this loop iteration
-        #     product_specific_data = df[
-        #         # (df['Opened Date'] >= pd.to_datetime(start_of_year)) &
-        #         # (df['Opened Date'] <= pd.to_datetime(today)) &
-        #         (df['Status'].isin(OPEN_STATUSES)) &
-        #         (df['Product Line'] == product) &
-        #         (df['Type']!=type) &
-        #         (df['Case Owner'].isin(selected_owners))
-        #     ].copy()
-
-        #     # --- THIS IS THE ADDED LINE ---
-        #     # Display the total count for the current product using a metric card.
-        #     st.metric(label="Total Open Cases (YTD)", value=len(product_specific_data))
-
-        #     if not product_specific_data.empty:
-        #         drill_col1, drill_col2, drill_col3 = st.columns(3)
-                
-        #         with drill_col1:
-        #             if 'Product Model' in df.columns:
-        #                 model_counts = product_specific_data.groupby('Product Model').size().reset_index(name='Count')
-        #                 if not model_counts.empty:
-        #                     fig_model = px.pie(
-        #                         model_counts, 
-        #                         values='Count', 
-        #                         names='Product Model', 
-        #                         title=f'Breakdown by Model',
-        #                         color_discrete_sequence=px.colors.qualitative.Vivid
-        #                     )
-        #                     fig_model.update_traces(textinfo='percent+value')
-        #                     fig_model.update_layout(height=450)
-        #                     st.plotly_chart(fig_model, use_container_width=True)
-        #                     create_download_buttons(fig_model, model_counts, f"ytd_{product}_by_model")
-
-        #         with drill_col2:
-        #             if 'Case Reason' in df.columns:
-        #                 reason_counts = product_specific_data.groupby('Case Reason').size().reset_index(name='Count')
-        #                 if not reason_counts.empty:
-        #                     fig_reason = px.pie(
-        #                         reason_counts, 
-        #                         values='Count', 
-        #                         names='Case Reason', 
-        #                         title=f'Breakdown by Case Reason',
-        #                         color_discrete_sequence=px.colors.qualitative.Vivid
-        #                     )
-        #                     fig_reason.update_traces(textinfo='percent+value')
-        #                     fig_reason.update_layout(height=450)
-        #                     st.plotly_chart(fig_reason, use_container_width=True)
-        #                     create_download_buttons(fig_reason, reason_counts, f"ytd_{product}_by_reason")
-                
-        #         with drill_col3:
-        #             if 'Case Owner' in df.columns:
-        #                 owner_counts = product_specific_data.groupby('Case Owner').size().reset_index(name='Count')
-        #                 if not owner_counts.empty:
-        #                     fig_owner = px.pie(
-        #                         owner_counts, 
-        #                         values='Count', 
-        #                         names='Case Owner', 
-        #                         title=f'Breakdown by Case Owner',
-        #                         color_discrete_sequence=px.colors.qualitative.Vivid
-        #                     )
-        #                     fig_owner.update_traces(textinfo='percent+value')
-        #                     fig_owner.update_layout(height=450)
-        #                     st.plotly_chart(fig_owner, use_container_width=True)
-        #                     create_download_buttons(fig_owner, owner_counts, f"ytd_{product}_by_owner")
-        #     # The info message below will now only show if the count is zero
-        #     elif len(product_specific_data) == 0:
-        #         st.info(f"No open cases found for '{product}' from the start of the year to date.")
-            
-        #     st.markdown("---") # Add a separator after each product line's analysis
-
-
 
         # --- MODIFIED SECTION STARTS HERE ---
         st.subheader("Additional Analysis ( Open Cases for Key Product Lines) - Excluding RMA Requests")
@@ -591,12 +466,15 @@ if uploaded_file:
             
             # Filter for open cases, within YTD, for the specific product line in this loop iteration
             product_specific_data = df[
+                # (df['Opened Date'] >= pd.to_datetime(start_of_year)) &
+                # (df['Opened Date'] <= pd.to_datetime(today)) &
                 (df['Status'].isin(OPEN_STATUSES)) &
                 (df['Product Line'] == product) &
-                (df['Type'] != type) &
+                (df['Type']!=type) &
                 (df['Case Owner'].isin(selected_owners))
             ].copy()
 
+            
             # Display the total count for the current product using a metric card.
             st.metric(label="Total Open Cases (YTD)", value=len(product_specific_data))
 
@@ -608,16 +486,15 @@ if uploaded_file:
                         model_counts = product_specific_data.groupby('Product Model').size().reset_index(name='Count')
                         if not model_counts.empty:
                             fig_model = px.pie(
-                                model_counts, 
-                                values='Count', 
-                                names='Product Model', 
+                                model_counts,
+                                values='Count',
+                                names='Product Model',
                                 title=f'Breakdown by Model',
                                 color_discrete_sequence=px.colors.qualitative.Vivid
                             )
                             fig_model.update_traces(textinfo='percent+value')
                             fig_model.update_layout(height=450)
-                            # ADDED KEY HERE
-                            st.plotly_chart(fig_model, use_container_width=True, key=f"chart_model_{product}")
+                            st.plotly_chart(fig_model, width='stretch')
                             create_download_buttons(fig_model, model_counts, f"ytd_{product}_by_model")
 
                 with drill_col2:
@@ -625,16 +502,15 @@ if uploaded_file:
                         reason_counts = product_specific_data.groupby('Case Reason').size().reset_index(name='Count')
                         if not reason_counts.empty:
                             fig_reason = px.pie(
-                                reason_counts, 
-                                values='Count', 
-                                names='Case Reason', 
+                                reason_counts,
+                                values='Count',
+                                names='Case Reason',
                                 title=f'Breakdown by Case Reason',
                                 color_discrete_sequence=px.colors.qualitative.Vivid
                             )
                             fig_reason.update_traces(textinfo='percent+value')
                             fig_reason.update_layout(height=450)
-                            # ADDED KEY HERE
-                            st.plotly_chart(fig_reason, use_container_width=True, key=f"chart_reason_{product}")
+                            st.plotly_chart(fig_reason, width='stretch')
                             create_download_buttons(fig_reason, reason_counts, f"ytd_{product}_by_reason")
                 
                 with drill_col3:
@@ -650,14 +526,13 @@ if uploaded_file:
                             )
                             fig_owner.update_traces(textinfo='percent+value')
                             fig_owner.update_layout(height=450)
-                            # ADDED KEY HERE (This was the specific line causing your crash)
-                            st.plotly_chart(fig_owner, use_container_width=True, key=f"chart_owner_{product}")
+                            st.plotly_chart(fig_owner, width='stretch')
                             create_download_buttons(fig_owner, owner_counts, f"ytd_{product}_by_owner")
-            
+            # The info message below will now only show if the count is zero
             elif len(product_specific_data) == 0:
                 st.info(f"No open cases found for '{product}' from the start of the year to date.")
             
-            st.markdown("---")
+            st.markdown("---") # Add a separator after each product line's analysis
         st.header("Open Case Backlog Analysis - including RMA")
         st.info("This analysis shows the backlog of open cases from January 1st to today, assigned only to Users Defined in .env file.")
 
@@ -706,27 +581,27 @@ if uploaded_file:
                 with ytd_row1_col1:
                     ytd_product_counts = ytd_open_cases.groupby('Product Line').size().reset_index(name='Count')
                     fig_ytd_product = px.pie(ytd_product_counts, values='Count', names='Product Line', title='By Product Line')
-                    st.plotly_chart(fig_ytd_product, use_container_width=True)
+                    st.plotly_chart(fig_ytd_product, width='stretch')
                     create_download_buttons(fig_ytd_product, ytd_product_counts, "ytd_backlog_by_product")
                 
                 with ytd_row1_col2:
                     if 'Product Model' in df.columns:
                         ytd_model_counts = ytd_open_cases.groupby('Product Model').size().reset_index(name='Count')
                         fig_ytd_model = px.pie(ytd_model_counts, values='Count', names='Product Model', title='By Product Model')
-                        st.plotly_chart(fig_ytd_model, use_container_width=True)
+                        st.plotly_chart(fig_ytd_model, width='stretch')
                         create_download_buttons(fig_ytd_model, ytd_model_counts, "ytd_backlog_by_model")
                 
                 with ytd_row2_col1:
                     if 'Case Reason' in df.columns:
                         ytd_reason_counts = ytd_open_cases.groupby('Case Reason').size().reset_index(name='Count')
                         fig_ytd_reason = px.pie(ytd_reason_counts, values='Count', names='Case Reason', title='By Case Reason')
-                        st.plotly_chart(fig_ytd_reason, use_container_width=True)
+                        st.plotly_chart(fig_ytd_reason, width='stretch')
                         create_download_buttons(fig_ytd_reason, ytd_reason_counts, "ytd_backlog_by_reason")
                 
                 with ytd_row2_col2:
                     ytd_owner_counts = ytd_open_cases.groupby('Case Owner').size().reset_index(name='Count')
                     fig_ytd_owner = px.pie(ytd_owner_counts, values='Count', names='Case Owner', title='By Case Owner')
-                    st.plotly_chart(fig_ytd_owner, use_container_width=True)
+                    st.plotly_chart(fig_ytd_owner, width='stretch')
                     create_download_buttons(fig_ytd_owner, ytd_owner_counts, "ytd_backlog_by_owner")
             else:
                 st.info("No open cases found for the specified owners from the start of the year to date.")
@@ -740,16 +615,31 @@ if uploaded_file:
         # Use this instead of today's date
         end_date_graph = latest_date_in_data
 
-        # st.markdown("---")
-        # # --- Year-to-Date Performance Trends ---
+        st.markdown("---")
+        # --- Year-to-Date Performance Trends ---
         # st.header("Performance Trends")
-        # st.info("These charts analyze trends from January 1st of the current year until today, independent of the date filter above.")
+        
+        # # 1. Find the latest date in the uploaded data
+        # latest_date_in_data = df['Opened Date'].max()
+        # if 'Case Last Modified Date' in df.columns:
+        #     max_modified = df['Case Last Modified Date'].max()
+        #     # Check if max_modified is a valid date (not NaT) and greater
+        #     if pd.notna(max_modified) and max_modified > latest_date_in_data:
+        #         latest_date_in_data = max_modified
 
-        # today = date.today()
-        # start_of_year = date(today.year, 1, 1)
+        # # 2. Use the year from the latest data, not the system's 'today'
+        # latest_year = latest_date_in_data.year
+        # start_of_year = date(latest_year, 1, 1)
+        
+        # # 3. Define the single end date for all YTD charts
+        # YTD_END_DATE = latest_date_in_data.date()
+        # st.info(f"These charts analyze trends from January 1st of the current year until today, independent of the date filter above. These charts analyze trends from {start_of_year.strftime('%d %b, %Y')} until the latest data on {YTD_END_DATE.strftime('%d %b, %Y')}.")
+            
+        # # 4. Update the info box to be more helpful
+        # # st.info(f"These charts analyze trends from {start_of_year.strftime('%d %b, %Y')} until the latest data on {YTD_END_DATE.strftime('%d %b, %Y')}.")
 
         # # --- Specific owners to consider ---
-
+        # owners_str = "_".join(selected_owners)
 
         # # --- Chart: Average Case Age (Only Open Cases) ---
         # st.markdown("##### Average Case Age (YTD)")
@@ -759,7 +649,8 @@ if uploaded_file:
 
         # # ✅ Filter only open cases for selected owners
         # all_open_cases_ytd = df[
-        #     (df['Status'].isin(OPEN_STATUSESAVG)) &
+        #     (df['Status'].isin(OPEN_STATUSES)) &
+        #     (df['Opened Date'] >= pd.to_datetime(start_of_year)) &
         #     (df['Product Line'].isin(key_product_lines)) &
         #     (df['Case Owner'].isin(selected_owners)) &
         #     (df['Type'] != type)
@@ -770,29 +661,41 @@ if uploaded_file:
         #     all_open_cases_ytd['Opened Date'] = pd.to_datetime(all_open_cases_ytd['Opened Date'], errors='coerce')
         #     all_open_cases_ytd = all_open_cases_ytd.dropna(subset=['Opened Date'])
 
-        #     daily_avg_age_data = []
-
-        #     # --- Calculate age dynamically ---
-        #     for day in pd.date_range(start=start_of_year, end=end_date_dt):
-        #         open_on_day = all_open_cases_ytd[all_open_cases_ytd['Opened Date'] <= day]
-        #         if not open_on_day.empty:
-        #             ages = (day - open_on_day['Opened Date']).dt.days
+        #     # --- NEW: We will store weekly data directly ---
+        #     weekly_avg_age_data = []
+        #     # This loop calculates the snapshot average on the Monday of each week
+        #     for week_start in pd.date_range(start=start_of_year, end=YTD_END_DATE, freq='W-MON'):
+                
+        #         # Find cases that were open on or before this Monday
+        #         open_on_week = all_open_cases_ytd[all_open_cases_ytd['Opened Date'] <= week_start]
+                
+        #         avg_age = 0 # Default to 0
+        #         if not open_on_week.empty:
+        #             # Calculate their age *on* that Monday
+        #             ages = (week_start - open_on_week['Opened Date']).dt.days
         #             avg_age = ages.mean()
-        #             daily_avg_age_data.append({'Date': day, 'Average Age (Days)': avg_age})
+                
+        #         # ALWAYS append the data point (either 0 or the calculated average)
+        #         weekly_avg_age_data.append({'Week Start': week_start, 'Average Age (Days)': avg_age})
 
-        #     if daily_avg_age_data:
-        #         trend_df = pd.DataFrame(daily_avg_age_data).set_index('Date')
-        #         weekly_trend_df = trend_df.resample('W-Mon').mean().reset_index()
-        #         weekly_trend_df['Week Number'] = weekly_trend_df.index + 1
-
+        #     if weekly_avg_age_data:
+        #         # --- NEW: No resample needed! ---
+        #         weekly_trend_df = pd.DataFrame(weekly_avg_age_data)
+        #         # Create a simple week number (1, 2, 3...) for the x-axis
+        #         # weekly_trend_df['Week Number'] = range(1, len(weekly_trend_df) + 1)
+        #         # NEW: Use the actual calendar week (ISO week) for the x-axis
+        #         weekly_trend_df['Week Number'] = weekly_trend_df['Week Start'].dt.isocalendar().week
+                
         #         # --- Plotly Chart ---
         #         fig_age_trend = px.line(
         #             weekly_trend_df,
         #             x='Week Number',
         #             y='Average Age (Days)',
-        #             title=f"Weekly Trend of Avg. Open Case Age (YTD) - Owners: {', '.join(selected_owners)}",
+        #             title=f"Weekly Trend of Avg. Open Case Age (YT D) - Owners: {', '.join(selected_owners)}",
         #             markers=True,
-        #             line_shape='spline'
+        #             line_shape='spline',
+        #             # NEW: Added hover_data so you can see the date on the chart
+        #             hover_data={'Week Start': '|%b %d, %Y'} 
         #         )
 
         #         fig_age_trend.update_layout(
@@ -802,24 +705,22 @@ if uploaded_file:
         #         )
 
         #         # Make x-axis labels readable
+        #         # Make x-axis labels readable and set full year range
         #         fig_age_trend.update_xaxes(
         #             tickmode='linear',
-        #             dtick=1,
-        #             tickangle=-45,
-        #             tickfont=dict(size=10)
+        #             dtick=2, # Show a tick every 2 weeks (1 is too crowded)
+        #             # tickangle=-30,
+        #             tickfont=dict(size=10),
+        #             range=[1, 53] # Force x-axis to show Week 1 to 53
         #         )
 
-        #         st.plotly_chart(fig_age_trend, use_container_width=True)
+        #         st.plotly_chart(fig_age_trend, width='stretch') # Fixed typo
         #         owners_str = "_".join([o.replace(" ", "_") for o in selected_owners])
         #         create_download_buttons(fig_age_trend, weekly_trend_df, f"ytd_average_case_age_{owners_str}")
 
         # else:
         #     st.warning("No open cases found for the selected product lines and owners.")
-
         # st.markdown("---")
-
-
-
 
         # # # --- Chart 2: Average Resolution Time (YTD) Considering Only Specific Statuses ---
         # # st.markdown("##### Average Resolution Time (YTD)")
@@ -857,7 +758,7 @@ if uploaded_file:
         # #             closed_cases = relevant_cases_ytd[
         # #                 (relevant_cases_ytd['Status'].isin(CLOSED_STATUSES)) &
         # #                 (relevant_cases_ytd['Case Last Modified Date'] <= week_start)
-        # #             ]
+        # #             ]jdafnk
         # #             avg_closed_time = None
         # #             if not closed_cases.empty:
         # #                 closed_cases['Resolution Time (Days)'] = (
@@ -903,7 +804,7 @@ if uploaded_file:
         # #                 margin=dict(l=50, r=30, t=70, b=100),
         # #             )
 
-        # #             st.plotly_chart(fig_close_trend, use_container_width=True)
+        # #             st.plotly_chart(fig_close_trend, width='stretch')
         # #             create_download_buttons(fig_close_trend, weekly_trend_df, "ytd_average_resolution_time")
         # #         else:
         # #             st.warning("No open or closed cases found with the specified statuses for YTD analysis.")
@@ -923,10 +824,11 @@ if uploaded_file:
         # for product in key_product_lines_for_loop:
         #     st.markdown(f"##### Trend for: **{product}**")
         #     st.caption("This shows the average number of days open cases for this product have been active, calculated weekly (Year-to-Date).")
-
         #     # Filter for open cases (excluding RMA type)
         #     product_specific_open_cases = df[
-        #         (df['Status'].isin(OPEN_STATUSESAVG)) &
+        #         (df['Status'].isin(OPEN_STATUSES)) &
+        #         (df['Opened Date'] >= pd.to_datetime(start_of_year)) &
+        #         (df['Opened Date'] <= pd.to_datetime(YTD_END_DATE)) &
         #         (df['Product Line'] == product) &
         #         (df['Case Owner'].isin(selected_owners)) &
         #         (df['Type'] != type)
@@ -935,21 +837,26 @@ if uploaded_file:
         #     if not product_specific_open_cases.empty:
         #         # Create a DataFrame for each Monday in the year (weekly points)
         #         weekly_avg_age_data = []
-        #         for week_start in pd.date_range(start=start_of_year, end=end_date_dt, freq='W-MON'):
+        #         for week_start in pd.date_range(start=start_of_year, end=YTD_END_DATE, freq='W-MON'):
         #             open_on_week = product_specific_open_cases[
         #                 product_specific_open_cases['Opened Date'] <= week_start
-        #             ]
+        #             ].copy()
+                    
+        #             avg_age = 0 # Default to 0
         #             if not open_on_week.empty:
         #                 open_on_week['Age (Days)'] = (week_start - open_on_week['Opened Date']).dt.days
         #                 avg_age = open_on_week['Age (Days)'].mean()
-        #                 weekly_avg_age_data.append({
-        #                     'Week Start': week_start,
-        #                     'Average Age (Days)': avg_age
-        #                 })
+                    
+        #             # ALWAYS append the data point
+        #             weekly_avg_age_data.append({
+        #                 'Week Start': week_start,
+        #                 'Average Age (Days)': avg_age,
+        #             })
 
         #         if weekly_avg_age_data:
         #             weekly_trend_df_product = pd.DataFrame(weekly_avg_age_data)
-        #             weekly_trend_df_product['Week Number'] = range(1, len(weekly_trend_df_product) + 1)
+        #             # weekly_trend_df_product['Week Number'] = range(1, len(weekly_trend_df_product) + 1)
+        #             weekly_trend_df_product['Week Number'] = weekly_trend_df_product['Week Start'].dt.isocalendar().week
 
         #             # --- Plotly line chart ---
         #             fig_product_trend = px.line(
@@ -966,21 +873,19 @@ if uploaded_file:
         #                 yaxis_title="Average Case Age (Days)",
         #                 xaxis_title="Week Number (Since Start of Year)",
         #                 xaxis=dict(
-        #                     tickmode='linear',
-        #                     dtick=1,             # Show every week number
-        #                     tickangle=-45,       # Rotate labels slightly
-        #                     tickfont=dict(size=10),
-        #                     automargin=True
-        #                 ),
+        #                 tickmode='linear',
+        #                 dtick=2,             # Show a tick every 2 weeks
+        #                 # tickangle=-30,       # Rotate labels slightly
+        #                 tickfont=dict(size=10),
+        #                 automargin=True,
+        #                 range=[1, 53] # Force x-axis to show Week 1 to 53
+        #             ),
         #                 margin=dict(l=50, r=30, t=70, b=120),
         #             )
 
-        #             st.plotly_chart(fig_product_trend, use_container_width=True)
+        #             st.plotly_chart(fig_product_trend, width='stretch')
         #             create_download_buttons(fig_product_trend, weekly_trend_df_product, f"ytd_avg_case_age_{product}")
-
         #     else:
         #         st.info(f"No open cases found for '{product}' to analyze YTD age trend.")
-
-
-else:
-    st.info("Please upload an Excel file to get started.")
+    else:
+        st.info("Please upload an Excel file to get started.")
